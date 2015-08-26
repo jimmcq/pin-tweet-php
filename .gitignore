@@ -1,0 +1,5 @@
+config.json
+scores.json
+
+# Mac
+.DS_Store
