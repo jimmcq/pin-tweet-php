@@ -1,7 +1,11 @@
 {
     "description": "This is an example configuration file. You can use this as a template for creating your own config.json file",
-    "machineName": "",
+    "machine": {
+        "name": "Pinball",
+        "maxPlayers": 4
+    },
     "serial": {
+        "description": "The location of your Serial Port such as COM1 or /dev/tty.usbserial",
         "device": ""
     },
     "OAuth": {
@@ -10,13 +14,5 @@
         "consumer_secret": "XXX",
         "access_token": "XXX",
         "access_token_secret": "XXX"
-    },
-    "rankedList": [
-        "Description: This should contain a list of scores that are considered part of the same Top Scores list",
-        "Grand Champion",
-        "High Score #1",
-        "High Score #2",
-        "High Score #3",
-        "High Score #4"
-    ]
+    }
 }

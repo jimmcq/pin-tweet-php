@@ -12,7 +12,11 @@ function initSerial($serialData) {
     global $serialConnection;
 
     $serialConnection = new PhpSerial;
+
     $serialConnection->deviceSet($serialData['device']);
+    if(empty($serialConnection->_dbstate) || $serialConnection->_dbstate != SERIAL_DEVICE_SET) {
+        exit("Could not set serial device.\n");
+    }
 
     $serialConnection->confBaudRate(57600);
     $serialConnection->confCharacterLength(8);
@@ -25,7 +29,16 @@ function initSerial($serialData) {
     $serialConnection->sendMessage("zc ver");
     $response = $serialConnection->readPort();
 
-    // check that it's higher or equal to 1.18
+    // check that the version higher or equal to 1.18
+    $pattern = '/([0-9]+\.[0-9]{1,2})/';
+    preg_match($pattern, $response, $matches);
+    if(floatval($matches[0]) < 1.18)
+    {
+        exit("Communication patch v1.18 or later must be installed.\n");
+    }
+
+    return TRUE;
+
 }
 
 // signal handler function
@@ -45,11 +58,14 @@ function queryScores($maxPlayers) {
 
     $scores = array();
 
-    for($i = 1; $i < $maxPlayers; $i++) {
-        $serial->sendMessage('zc mod 0x5c073564 '.$i);
-        $response = $serial->readPort();
+    for($i = 1; $i <= $maxPlayers; $i++) {
+        $serialConnection->sendMessage('zc mod 0x5c073564 '.$i);
+        $response = $serialConnection->readPort();
 
-        // Parse score= with hex2dec
+        $pattern = '/=([0-9a-fA-F]+)/';
+        preg_match($pattern, $response, $matches);
+        $scores[$i] = hexdec($matches[1]);
+
     }
 
     return max($scores);
@@ -80,22 +96,31 @@ $prevScores = json_decode(file_get_contents('scores.json'), TRUE);
 
 initSerial($config['serial']);
 
+// setup signal handlers
+if (function_exists('imap_open')) {
+    pcntl_signal(SIGINT, "shutdown");
+    pcntl_signal(SIGTERM, "shutdown");
+    pcntl_signal(SIGHUP,  "shutdown");
+}
+
+$prevScore = !empty($prevScores['highscore']) ? $prevScores['highscore'] : 0;
 while(TRUE) {
 
-    $newScore = queryScores($config['maxPlayers']);
+    $newScore = queryScores($config['machine']['maxPlayers']);
 
-    if(!empty($newScores)) {
+    if(!empty($newScore)) {
+        if($newScore < $prevScore) {
+            $status = 'Score of '.$prevScore.' posted to '.$config['machine']['name'];
 
-        // DO STUFF
+            $result = postTweet($config['OAuth'], $status);
+            if(empty($result)) {
+                exit ("Tweet not posted\n");
+            }
 
-        /*
-        $result = postTweet($config['OAuth'], $status);
-        if(empty($result)) {
-            exit ("Tweet not posted\n");
+             file_put_contents('scores.json', json_encode(array('highscore'=>$prevScore), JSON_PRETTY_PRINT));
         }
-        */
 
-        // file_put_contents('scores.json', json_encode($newScores, JSON_PRETTY_PRINT));
-
+        $prevScore = $newScore;
     }
+    sleep(10);
 }
