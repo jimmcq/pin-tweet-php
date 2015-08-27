@@ -92,7 +92,9 @@ if(empty($config)) {
     exit("Couldn't load config.json file. Look at config-sample.json for examples of how to format your config.json\n");
 }
 
-$prevScores = json_decode(file_get_contents('scores.json'), TRUE);
+if(file_exists('scores.json')) {
+    $prevScores = json_decode(file_get_contents('scores.json'), TRUE);
+}
 
 initSerial($config['serial']);
 
