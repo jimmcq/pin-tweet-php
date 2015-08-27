@@ -15,7 +15,8 @@ function initSerial($serialData) {
 
     $serialConnection->deviceSet($serialData['device']);
     if(empty($serialConnection->_dbstate) || $serialConnection->_dbstate != SERIAL_DEVICE_SET) {
-        exit("Could not set serial device.\n");
+
+        logIt('Could not set serial device.', TRUE);
     }
 
     $serialConnection->confBaudRate(57600);
@@ -34,7 +35,7 @@ function initSerial($serialData) {
     preg_match($pattern, $response, $matches);
     if(floatval($matches[0]) < 1.18)
     {
-        exit("Communication patch v1.18 or later must be installed.\n");
+        logIt('Communication patch v1.18 or later must be installed.', TRUE);
     }
 
     return TRUE;
@@ -53,7 +54,7 @@ function queryScores($maxPlayers) {
     global $serialConnection;
 
     if ($maxPlayers < 1) {
-        exit("maxPlayers must be at least 1.\n");
+        logIt('maxPlayers must be at least 1.', TRUE);
     }
 
     $scores = array();
@@ -80,16 +81,23 @@ function postTweet($OAuth, $status) {
     $result = $connection->post("statuses/update", array("status" => $status));
 
     if (empty($result->id)) {
-        exit("Error posting tweet.\n");
+        logIt('Error posting tweet.', TRUE);
     } else {
         return TRUE;
     }
 
 }
 
+function logIt($text, $exit = FALSE) {
+    file_put_contents('pintweet.log', date('c').' '.trim($text)."\n", FILE_APPEND);
+    if($exit) {
+        exit(trim($text)."\n");
+    }
+}
+
 $config = json_decode(file_get_contents('config.json'), TRUE);
 if(empty($config)) {
-    exit("Couldn't load config.json file. Look at config-sample.json for examples of how to format your config.json\n");
+    logIt('Could not load config.json file. Look at config-sample.json for examples of how to format your config.json', TRUE);
 }
 
 if(file_exists('scores.json')) {
@@ -113,10 +121,11 @@ while(TRUE) {
     if(!empty($newScore)) {
         if($newScore < $prevScore) {
             $status = 'Score of '.$prevScore.' posted to '.$config['machine']['name'];
+            logIt($status);
 
             $result = postTweet($config['OAuth'], $status);
             if(empty($result)) {
-                exit ("Tweet not posted\n");
+                logIt('Tweet not posted', TRUE);
             }
 
              file_put_contents('scores.json', json_encode(array('highscore'=>$prevScore), JSON_PRETTY_PRINT));

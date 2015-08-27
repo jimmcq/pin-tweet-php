@@ -1,5 +1,6 @@
 config.json
 scores.json
+pintweet.log
 
 # Mac
 .DS_Store
