@@ -8,6 +8,18 @@ use Abraham\TwitterOAuth\TwitterOAuth;
 // tick use required as of PHP 4.3.0
 declare(ticks = 1);
 
+function readData() {
+    global $serialConnection;
+
+    $startTime = time();
+
+    while(empty($response) && time() < ($startTime + 10)) {
+        @$response = $serialConnection->readPort();
+    }
+
+    return $response;
+}
+
 function initSerial($serialData) {
     global $serialConnection;
 
@@ -28,7 +40,7 @@ function initSerial($serialData) {
     $serialConnection->deviceOpen('r+');
 
     $serialConnection->sendMessage("zc ver");
-    $response = $serialConnection->readPort();
+    $response = readData();
 
     // check that the version higher or equal to 1.18
     $pattern = '/([0-9]+\.[0-9]{1,2})/';
@@ -43,11 +55,13 @@ function initSerial($serialData) {
 }
 
 // signal handler function
-function shutdown($signo) {
+function shutdown($signo = null) {
     global $serialConnection;
 
     $serialConnection->deviceClose();
 
+    logIt('*** SHUTDOWN ***');
+    exit();
 }
 
 function queryScores($maxPlayers) {
@@ -61,12 +75,16 @@ function queryScores($maxPlayers) {
 
     for($i = 1; $i <= $maxPlayers; $i++) {
         $serialConnection->sendMessage('zc mod 0x5c073564 '.$i);
-        $response = $serialConnection->readPort();
+        $response = readData();
 
         $pattern = '/=([0-9a-fA-F]+)/';
         preg_match($pattern, $response, $matches);
         $scores[$i] = hexdec($matches[1]);
 
+    }
+
+    if(count($scores) == 0) {
+        return FALSE;
     }
 
     return max($scores);
@@ -89,11 +107,14 @@ function postTweet($OAuth, $status) {
 }
 
 function logIt($text, $exit = FALSE) {
-    file_put_contents('pintweet.log', date('c').' '.trim($text)."\n", FILE_APPEND);
+    file_put_contents('pintweet.log', date('Y-m-d H:i:s').' '.trim($text)."\n", FILE_APPEND);
     if($exit) {
-        exit(trim($text)."\n");
+        echo(trim($text)."\n");
+        shutdown();
     }
 }
+
+logIt("*** STARTUP ***");
 
 $config = json_decode(file_get_contents('config.json'), TRUE);
 if(empty($config)) {
@@ -118,7 +139,12 @@ while(TRUE) {
 
     $newScore = queryScores($config['machine']['maxPlayers']);
 
-    if(!empty($newScore)) {
+    if($newScore !== FALSE) {
+
+        if($newScore != $prevScore) {
+            $lastScoreChange = time();
+        }
+
         if($newScore < $prevScore) {
             $status = 'Score of '.$prevScore.' posted to '.$config['machine']['name'];
             logIt($status);

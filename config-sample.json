@@ -6,7 +6,7 @@
     },
     "serial": {
         "description": "The location of your Serial Port such as COM1 or /dev/tty.usbserial",
-        "device": ""
+        "device": "/dev/ttyUSB0"
     },
     "OAuth": {
         "descrption": "You can find these under 'Keys and Access Tokens' at https://apps.twitter.com/",
