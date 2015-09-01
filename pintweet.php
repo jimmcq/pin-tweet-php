@@ -13,7 +13,11 @@ function queryData($message = null)
     if (!empty($message)) {
         // Set blocking mode for writing
         stream_set_blocking($serialConnection, 1);
-        fwrite($serialConnection, $message."\n");
+	for($i = 0; $i <= strlen($message); $i++) {
+            fputs($serialConnection, substr($message, $i, 1));
+	    usleep(50000);
+	}
+	fputs($serialConnection, "\n");
     }
 
     $timeout = time() + 10;
@@ -38,6 +42,11 @@ function queryData($message = null)
     if (!empty($message) && $response == $message) {
         // Original message echoed back, read again
         $response = queryData();
+    }
+
+    // Drain the read queue if there is anything left
+    while($c !== false) {
+        $c = fgets($serialConnection);
     }
 
     return $response;
@@ -170,24 +179,27 @@ while (true) {
 
         // If a new game has started or the scores last changed 2 minutes ago
         if ($newScore < $prevScore || ($lastScoreChange > 0 && (time()-$lastScoreChange) > 120)) {
-	    logIt('Score: '.number_format($prevScore));
+	    $status = 'Score of '.number_format($prevScore).' posted to '.$config['machine']['name'];
 	    if ($prevScore > $prevHighScore) {
-               $status = 'Score of '.number_format($prevScore).' posted to '.$config['machine']['name'];
-               logIt('Tweet: '.$status);
+                $status = 'HIGH '.$status;
+	        file_put_contents('scores.json', json_encode(array('highscore' => $prevScore), JSON_PRETTY_PRINT));
+	    }
 
-               $result = postTweet($config['OAuth'], $status);
-               if (empty($result)) {
-                  logIt('Tweet not posted', true);
-               }
-
-               file_put_contents('scores.json', json_encode(array('highscore' => $prevScore), JSON_PRETTY_PRINT));
+	    if($prevScore > 50000000) {
+                logIt('Tweet: '.$status);
+                $result = postTweet($config['OAuth'], $status);
+                if (empty($result)) {
+                   logIt('Tweet not posted', true);
+                }
+	    } else {
+	        logIt('Score: '.$prevScore);
 	    }
 
 	    $prevScore = 0;
             $lastScoreChange = 0;
+        } else {
+            $prevScore = $newScore;
         }
-
-        $prevScore = $newScore;
     }
     sleep(10);
 }
