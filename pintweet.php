@@ -33,13 +33,14 @@ function queryData($message = null)
 
         $line .= $c;
     } while ($c != "\n" && time() < $timeout);
+    $response = trim($line);
 
-    if (!empty($message) && $line == $message) {
+    if (!empty($message) && $response == $message) {
         // Original message echoed back, read again
-        $line = queryData();
+        $response = queryData();
     }
 
-    return $line;
+    return $response;
 }
 
 function initSerial($serialData)
@@ -152,6 +153,8 @@ if (function_exists('pcntl_signal')) {
 }
 
 $prevScore = !empty($prevScores['highscore']) ? $prevScores['highscore'] : 0;
+$lastScoreChange = 0;
+
 while (true) {
     $newScore = queryScores($config['machine']['maxPlayers']);
 
@@ -160,7 +163,8 @@ while (true) {
             $lastScoreChange = time();
         }
 
-        if ($newScore < $prevScore) {
+        // If a new game has started or the scores last changed 2 minutes ago
+        if ($newScore < $prevScore || ($lastScoreChange > 0 && (time()-$lastScoreChange) > 120)) {
             $status = 'Score of '.$prevScore.' posted to '.$config['machine']['name'];
             logIt($status);
 
@@ -170,6 +174,7 @@ while (true) {
             }
 
             file_put_contents('scores.json', json_encode(array('highscore' => $prevScore), JSON_PRETTY_PRINT));
+            $lastScoreChange = 0;
         }
 
         $prevScore = $newScore;
