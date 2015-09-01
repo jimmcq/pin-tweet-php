@@ -97,7 +97,11 @@ function queryScores($maxPlayers)
 
         $pattern = '/=([0-9a-fA-F]+)/';
         preg_match($pattern, $response, $matches);
+	if(!isset($matches[1])) {
+	    return false;
+        }
         $scores[$i] = hexdec($matches[1]);
+	sleep(1);
     }
 
     if (count($scores) == 0) {
@@ -117,7 +121,7 @@ function postTweet($OAuth, $status)
     $result = $connection->post('statuses/update', array('status' => $status));
 
     if (empty($result->id)) {
-        logIt('Error posting tweet.', true);
+        logIt('Error posting tweet. '.$result->errors[0]->message, true);
     } else {
         return true;
     }
@@ -152,7 +156,8 @@ if (function_exists('pcntl_signal')) {
     pcntl_signal(SIGHUP,  'shutdown');
 }
 
-$prevScore = !empty($prevScores['highscore']) ? $prevScores['highscore'] : 0;
+$prevScore = 0;
+$prevHighScore = !empty($prevScores['highscore']) ? $prevScores['highscore'] : 0;
 $lastScoreChange = 0;
 
 while (true) {
@@ -165,15 +170,20 @@ while (true) {
 
         // If a new game has started or the scores last changed 2 minutes ago
         if ($newScore < $prevScore || ($lastScoreChange > 0 && (time()-$lastScoreChange) > 120)) {
-            $status = 'Score of '.$prevScore.' posted to '.$config['machine']['name'];
-            logIt($status);
+	    logIt('Score: '.number_format($prevScore));
+	    if ($prevScore > $prevHighScore) {
+               $status = 'Score of '.number_format($prevScore).' posted to '.$config['machine']['name'];
+               logIt('Tweet: '.$status);
 
-            $result = postTweet($config['OAuth'], $status);
-            if (empty($result)) {
-                logIt('Tweet not posted', true);
-            }
+               $result = postTweet($config['OAuth'], $status);
+               if (empty($result)) {
+                  logIt('Tweet not posted', true);
+               }
 
-            file_put_contents('scores.json', json_encode(array('highscore' => $prevScore), JSON_PRETTY_PRINT));
+               file_put_contents('scores.json', json_encode(array('highscore' => $prevScore), JSON_PRETTY_PRINT));
+	    }
+
+	    $prevScore = 0;
             $lastScoreChange = 0;
         }
 
