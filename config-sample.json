@@ -1,0 +1,19 @@
+{
+    "description": "This is an example configuration file. You can use this as a template for creating your own config.json file",
+    "machine": {
+        "name": "Pinball",
+        "maxPlayers": 4,
+        "minimumScore": 1000000
+    },
+    "serial": {
+        "description": "The location of your Serial Port such as COM1 or /dev/tty.usbserial",
+        "device": "/dev/ttyUSB0"
+    },
+    "OAuth": {
+        "descrption": "You can find these under 'Keys and Access Tokens' at https://apps.twitter.com/",
+        "consumer_key": "XXX",
+        "consumer_secret": "XXX",
+        "access_token": "XXX",
+        "access_token_secret": "XXX"
+    }
+}
