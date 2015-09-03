@@ -2,7 +2,8 @@
     "description": "This is an example configuration file. You can use this as a template for creating your own config.json file",
     "machine": {
         "name": "Pinball",
-        "maxPlayers": 4
+        "maxPlayers": 4,
+        "minimumScore": 1000000
     },
     "serial": {
         "description": "The location of your Serial Port such as COM1 or /dev/tty.usbserial",

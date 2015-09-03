@@ -13,11 +13,11 @@ function queryData($message = null)
     if (!empty($message)) {
         // Set blocking mode for writing
         stream_set_blocking($serialConnection, 1);
-	for($i = 0; $i <= strlen($message); $i++) {
+        for ($i = 0; $i <= strlen($message); ++$i) {
             fputs($serialConnection, substr($message, $i, 1));
-	    usleep(50000);
-	}
-	fputs($serialConnection, "\n");
+            usleep(50000);
+        }
+        fputs($serialConnection, "\n");
     }
 
     $timeout = time() + 10;
@@ -45,7 +45,7 @@ function queryData($message = null)
     }
 
     // Drain the read queue if there is anything left
-    while($c !== false) {
+    while ($c !== false) {
         $c = fgets($serialConnection);
     }
 
@@ -106,11 +106,11 @@ function queryScores($maxPlayers)
 
         $pattern = '/=([0-9a-fA-F]+)/';
         preg_match($pattern, $response, $matches);
-	if(!isset($matches[1])) {
-	    return false;
+        if (!isset($matches[1])) {
+            return false;
         }
         $scores[$i] = hexdec($matches[1]);
-	sleep(1);
+        sleep(1);
     }
 
     if (count($scores) == 0) {
@@ -178,24 +178,24 @@ while (true) {
         }
 
         // If a new game has started or the scores last changed 2 minutes ago
-        if ($newScore < $prevScore || ($lastScoreChange > 0 && (time()-$lastScoreChange) > 120)) {
-	    $status = 'Score of '.number_format($prevScore).' posted to '.$config['machine']['name'];
-	    if ($prevScore > $prevHighScore) {
+        if ($newScore < $prevScore || ($lastScoreChange > 0 && (time() - $lastScoreChange) > 120)) {
+            $status = 'Score of '.number_format($prevScore).' posted to '.$config['machine']['name'];
+            if ($prevScore > $prevHighScore) {
                 $status = 'HIGH '.$status;
-	        file_put_contents('scores.json', json_encode(array('highscore' => $prevScore), JSON_PRETTY_PRINT));
-	    }
+                file_put_contents('scores.json', json_encode(array('highscore' => $prevScore), JSON_PRETTY_PRINT));
+            }
 
-	    if($prevScore > 50000000) {
+            if ($prevScore > 50000000) {
                 logIt('Tweet: '.$status);
                 $result = postTweet($config['OAuth'], $status);
                 if (empty($result)) {
-                   logIt('Tweet not posted', true);
+                    logIt('Tweet not posted', true);
                 }
-	    } else {
-	        logIt('Score: '.$prevScore);
-	    }
+            } else {
+                logIt('Score: '.$prevScore);
+            }
 
-	    $prevScore = 0;
+            $prevScore = 0;
             $lastScoreChange = 0;
         } else {
             $prevScore = $newScore;
