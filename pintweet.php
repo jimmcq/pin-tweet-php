@@ -173,7 +173,7 @@ while (true) {
     $newScore = queryScores($config['machine']['maxPlayers']);
 
     if ($newScore !== false) {
-        if ($newScore != $prevScore) {
+        if ($newScore != $prevScore && $prevScore > 0) {
             $lastScoreChange = time();
         }
 
@@ -185,15 +185,15 @@ while (true) {
                 file_put_contents('scores.json', json_encode(array('highscore' => $prevScore), JSON_PRETTY_PRINT));
             }
 
-            if ($prevScore > 50000000) {
+            if ($prevScore > $config['machine']['minimumScore']) {
                 logIt('Tweet: '.$status);
                 $result = postTweet($config['OAuth'], $status);
                 if (empty($result)) {
                     logIt('Tweet not posted', true);
                 }
-            } else {
-                logIt('Score: '.$prevScore);
-            }
+	    } else {
+	        logIt('Score: '.number_format($prevScore));
+	    }
 
             $prevScore = 0;
             $lastScoreChange = 0;
