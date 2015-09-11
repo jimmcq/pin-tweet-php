@@ -110,7 +110,7 @@ function queryScores($maxPlayers)
             return false;
         }
         $scores[$i] = hexdec($matches[1]);
-        if($scores[$i] === 0 {
+        if($scores[$i] === 0) {
             // If Player 2 has a score of zero, no need to check Players 3 & 4
             continue 1;
         }
