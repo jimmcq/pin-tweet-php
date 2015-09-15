@@ -15,7 +15,7 @@ function queryData($message = null)
         stream_set_blocking($serialConnection, 1);
         for ($i = 0; $i <= strlen($message); ++$i) {
             fputs($serialConnection, substr($message, $i, 1));
-            usleep(50000);
+	    //usleep(50000);
         }
         fputs($serialConnection, "\n");
     }
@@ -31,7 +31,7 @@ function queryData($message = null)
 
         // Wait for data to arrive
         if ($c === false) {
-            usleep(50000);
+            //usleep(50000);
             continue 1;
         }
 
@@ -102,6 +102,7 @@ function queryScores($maxPlayers)
     $scores = array();
 
     for ($i = 1; $i <= $maxPlayers; ++$i) {
+        sleep(1);
         $response = queryData('zc mod 0x5c073564 '.$i);
 
         $pattern = '/=([0-9a-fA-F]+)/';
@@ -112,10 +113,8 @@ function queryScores($maxPlayers)
         $scores[$i] = hexdec($matches[1]);
         if($scores[$i] === 0) {
             // If Player 2 has a score of zero, no need to check Players 3 & 4
-            continue 1;
+            break;
         }
-
-        sleep(1);
     }
 
     if (count($scores) == 0) {
@@ -215,5 +214,5 @@ while (true) {
             $prevScore = $newScore;
         }
     }
-    sleep(10);
+    sleep(5);
 }
