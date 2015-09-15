@@ -13,11 +13,7 @@ function queryData($message = null)
     if (!empty($message)) {
         // Set blocking mode for writing
         stream_set_blocking($serialConnection, 1);
-        for ($i = 0; $i <= strlen($message); ++$i) {
-            fputs($serialConnection, substr($message, $i, 1));
-	    //usleep(50000);
-        }
-        fputs($serialConnection, "\n");
+        fputs($serialConnection, $message."\n");
     }
 
     $timeout = time() + 10;
@@ -31,7 +27,6 @@ function queryData($message = null)
 
         // Wait for data to arrive
         if ($c === false) {
-            //usleep(50000);
             continue 1;
         }
 
@@ -41,6 +36,7 @@ function queryData($message = null)
 
     if (!empty($message) && $response == $message) {
         // Original message echoed back, read again
+        sleep(1);
         $response = queryData();
     }
 
