@@ -173,7 +173,7 @@ if (function_exists('pcntl_signal')) {
 $prevScore = 0;
 $prevHighScore = !empty($prevScores['highscore']) ? $prevScores['highscore'] : 0;
 $lastScoreChange = 0;
-$lowScoreFound == FALSE;
+$lowScoreFound = FALSE;
 
 while (true) {
     $newScore = queryScores($config['machine']['maxPlayers']);
@@ -186,9 +186,8 @@ while (true) {
         /* Make sure you've seen two lower scores in a row before processing it.
            Only one lower score could be a glitch in reading the serial port. */
         if ($newScore < $prevScore && $lowScoreFound == false) {
-                $lowScoreFound = true;
-                continue 1;
-            }
+            $lowScoreFound = true;
+            continue 1;
         }
         $lowScoreFound = false;
 
