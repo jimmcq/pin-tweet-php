@@ -32,7 +32,7 @@ function queryData($message = null)
         // Wait for data to arrive
         if ($c === false) {
             usleep(50000);
-            continue;
+            continue 1;
         }
 
         $line .= $c;
@@ -132,10 +132,10 @@ function postTweet($OAuth, $status)
     }
 
     $connection = new TwitterOAuth($OAuth['consumer_key'], $OAuth['consumer_secret'], $OAuth['access_token'], $OAuth['access_token_secret']);
-    $result = $connection->post('statuses/update', array('status' => $status));
+    $result = $connection->post('statuses/update', array('status' => $status.' #PinScore'));
 
     if (empty($result->id)) {
-        logIt('Error posting tweet. '.$result->errors[0]->message, true);
+        logIt('Error posting tweet. '.$result->errors[0]->message);
     } else {
         return true;
     }
@@ -173,6 +173,7 @@ if (function_exists('pcntl_signal')) {
 $prevScore = 0;
 $prevHighScore = !empty($prevScores['highscore']) ? $prevScores['highscore'] : 0;
 $lastScoreChange = 0;
+$lowScoreFound == FALSE;
 
 while (true) {
     $newScore = queryScores($config['machine']['maxPlayers']);
@@ -181,6 +182,15 @@ while (true) {
         if ($newScore != $prevScore && $prevScore > 0) {
             $lastScoreChange = time();
         }
+
+        /* Make sure you've seen two lower scores in a row before processing it.
+           Only one lower score could be a glitch in reading the serial port. */
+        if ($newScore < $prevScore && $lowScoreFound == false) {
+                $lowScoreFound = true;
+                continue 1;
+            }
+        }
+        $lowScoreFound = false;
 
         // If a new game has started or the scores last changed 2 minutes ago
         if ($newScore < $prevScore || ($lastScoreChange > 0 && (time() - $lastScoreChange) > 120)) {
@@ -194,7 +204,7 @@ while (true) {
                 logIt('Tweet: '.$status);
                 $result = postTweet($config['OAuth'], $status);
                 if (empty($result)) {
-                    logIt('Tweet not posted', true);
+                    logIt('Tweet not posted');
                 }
 	    } else {
 	        logIt('Score: '.number_format($prevScore));
