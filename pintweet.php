@@ -192,6 +192,7 @@ while (true) {
             if ($prevScore > $prevHighScore) {
                 $status = 'HIGH '.$status;
                 file_put_contents('scores.json', json_encode(array('highscore' => $prevScore), JSON_PRETTY_PRINT));
+                $prevHighScore = $prevScore;
             }
 
             if ($prevScore > $config['machine']['minimumScore']) {
